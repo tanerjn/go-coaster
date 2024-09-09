@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"  # Map port 3000 on the host to port 3000 in the container
+    networks:
+      - my-network
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    depends_on:
+      - server  # Ensure the server starts before the client
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    driver: bridge
+

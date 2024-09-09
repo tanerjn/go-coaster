@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: coaster-service
+  labels:
+    app: coaster
+spec:
+  selector:
+    app: coaster
+  ports:
+    - protocol: TCP
+      port: 80           # The port that the service will expose
+      targetPort: 3000   # The port on the container to which traffic will be forwarded
+  type: ClusterIP      # Internal access only; use LoadBalancer for external access
+

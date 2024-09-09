@@ -1,0 +1,13 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: coaster-route
+spec:
+  to:
+    kind: Service
+    name: coaster-service
+  port:
+    targetPort: 80
+  tls:
+    termination: edge
+

@@ -1,0 +1,335 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2639
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;\f1\fnil\fcharset0 AppleColorEmoji;\f2\froman\fcharset0 Times-Roman;
+\f3\froman\fcharset0 Times-Bold;\f4\fmodern\fcharset0 Courier;\f5\fnil\fcharset0 AndaleMono;
+\f6\froman\fcharset0 Times-Italic;}
+{\colortbl;\red255\green255\blue255;\red193\green193\blue193;\red47\green255\blue18;\red21\green21\blue21;
+}
+{\*\expandedcolortbl;;\cssrgb\c80000\c80000\c80000;\cssrgb\c15686\c99608\c7843;\cssrgb\c10689\c10689\c10689;
+}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}
+{\list\listtemplateid2\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid101\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid2}
+{\list\listtemplateid3\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid201\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid3}
+{\list\listtemplateid4\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid301\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid4}
+{\list\listtemplateid5\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid401\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid5}
+{\list\listtemplateid6\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid501\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid6}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}{\listoverride\listid3\listoverridecount0\ls3}{\listoverride\listid4\listoverridecount0\ls4}{\listoverride\listid5\listoverridecount0\ls5}{\listoverride\listid6\listoverridecount0\ls6}}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh9640\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \expnd0\expndtw0\kerning0
+\
+1. Fixes 
+\f1 \uc0\u55357 \u56424 \u8205 \u55357 \u56615 
+\f0 \
+\
+\pard\tx566\pardeftab720\partightenfactor0
+
+\f2 \cf0 Story(rephrase): RollerCoaster operates in periodical timeline(standalone server run). And at the start point(by including client run), random number of users get in the roller coaster. Cycle will operate continuously unless there is no interruption on client or server.\
+\
+Visible problems: \
+
+\f0 \cf2 \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f2 \cf0 1.1. 
+\f3\b Thread Safety
+\f2\b0 -> Slices. \
+The 
+\f4\fs26 rideQueue
+\f2\fs24  slice is accessed concurrently from multiple goroutines. The 
+\f4\fs26 rideQueue
+\f2\fs24  modifications are not always protected by a mutex, which could lead to race conditions.\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls1\ilvl0
+\f3\b \cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Issue
+\f2\b0 : In 
+\f4\fs26 start()
+\f2\fs24 , while looping over 
+\f4\fs26 rc.rideQueue
+\f2\fs24 , you lock 
+\f4\fs26 rc.rideQueueMu
+\f2\fs24  only for each rider being seated, not for the entire slice operation.\
+\ls1\ilvl0
+\f3\b \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Fix
+\f2\b0 : The lock should cover both the slice length check and the operation that removes riders from the queue.\
+\pard\tx566\pardeftab720\partightenfactor0
+\cf0 \
+1.2. 
+\f3\b Race Condition
+\f2\b0  -> 
+\f4\fs26 rc.ride\
+\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f2\fs24 \cf0 The 
+\f4\fs26 rc.ride
+\f2\fs24  slice (used to store seated riders) is being modified in the 
+\f4\fs26 seatRider()
+\f2\fs24  method without proper locking around the append operation.\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls2\ilvl0
+\f3\b \cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Fix
+\f2\b0 : Lock the 
+\f4\fs26 rideMu
+\f2\fs24  before modifying 
+\f4\fs26 rc.ride
+\f2\fs24 , and unlock once operation is complete. ( 
+\f1 \uc0\u55357 \u56595 
+\f2 )\
+\pard\tx566\pardeftab720\partightenfactor0
+\cf0 \
+1.3.  
+\f3\b Obsolete Imports:
+\f2\b0  You are importing 
+\f4\fs26 "math"
+\f2\fs24  and 
+\f4\fs26 "math/rand"
+\f2\fs24  but don't need 
+\f4\fs26 "math"
+\f2\fs24 . You can use 
+\f4\fs26 rand.Intn()
+\f2\fs24  directly, and there\'92s no need for 
+\f4\fs26 math.Abs()
+\f2\fs24  in this context.\
+\
+1.4.
+\f3\b  Randomisation: 
+\f2\b0 In the client, you're using 
+\f4\fs26 rand.IntN()
+\f2\fs24  without seeding it with a unique seed value. This can lead to the same sequence of random numbers each time the client runs.\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls3\ilvl0
+\f3\b \cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Fix
+\f2\b0 : Use 
+\f4\fs26 rand.Seed(time.Now().UnixNano())
+\f2\fs24  to ensure different random sequences for each client run.\
+\pard\tx566\pardeftab720\partightenfactor0
+\cf0 \
+1.5. 
+\f3\b Handler: 
+\f2\b0 http.Post \
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 	The client is sending POST requests without checking the response or handling errors, which could lead to issues like unhandled request failures or connection problems.\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls4\ilvl0
+\f3\b \cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Fix
+\f2\b0 : Add error handling for the 
+\f4\fs26 http.Post
+\f2\fs24  calls to ensure proper handling of failures.\
+\pard\tx566\pardeftab720\partightenfactor0
+\cf0 \
+1.6. 
+\f3\b Indexing: 
+\f2\b0 Car and Seat calculation: \
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 You are using this calculation to assign a car and seat:\
+\pard\pardeftab720\partightenfactor0
+
+\f5 \cf0 car := int(math.Abs(float64((i)/2))) + 1 \
+carSeat := i % carCapacity
+\f3\b \
+\pard\tx566\pardeftab720\partightenfactor0
+\cf0 \
+\pard\tx566\pardeftab720\partightenfactor0
+
+\f2\b0 \cf0 This calculation will sometimes assign riders incorrectly. For example, with 
+\f4\fs26 i = 0
+\f2\fs24 , it assigns the rider to car 1, seat 0, which is fine, but the way it's structured seems overcomplicated.\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls5\ilvl0
+\f3\b \cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Fix
+\f2\b0 : Simplify the seat assignment logic by dividing 
+\f4\fs26 i
+\f2\fs24  by 
+\f4\fs26 carCapacity
+\f2\fs24  to get the car number and using 
+\f4\fs26 i % carCapacity
+\f2\fs24  for the seat number.\
+\pard\tx566\pardeftab720\partightenfactor0
+\cf0 \
+1.7. 
+\f3\b  Context Cancellation
+\f2\b0 : \
+\
+The context in the 
+\f4\fs26 start()
+\f2\fs24  method is not checked after the ride is done (
+\f4\fs26 time.Sleep(10000 * time.Millisecond)
+\f2\fs24 ). This may cause the goroutine to block when the server is shutting down.\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls6\ilvl0
+\f3\b \cf0 \kerning1\expnd0\expndtw0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+Fix
+\f2\b0 : Check 
+\f4\fs26 ctx.Done()
+\f2\fs24  after the 
+\f4\fs26 time.Sleep
+\f2\fs24  to allow early cancellation of the ride loop. 
+\f1 \uc0\u55358 \u56962 
+\f2 __\
+\pard\tx566\pardeftab720\partightenfactor0
+\cf0 \
+Story complete: \
+	- Queued riders are taking their rides, and extracted from Queue once their ride is finished.\
+	- New riders are queued continuously, and appended to rideQueue without any interruption.\
+	- Optimisation(possible): Create another queue for waiting riders to do sth else, though likely not necessary.\
+\
+\pard\pardeftab720\partightenfactor0
+\cf0 This should be much safer and less prone to concurrency issues.\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 2. Creating Deployment\
+\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f3\b \cf0 2.1.
+\f2\b0  
+\f3\b Containerise application: Docker-files (
+\f1\b0 \uc0\u55357 \u56371 
+\f3\b )\
+
+\f2\b0 To avoid tedious networking in Docker I use OpenShift deployment. For now, I\'92ll publish only the endpoint to public, since I can not share my OpenShift administrator credentials with you.\
+
+\f3\b Building images:\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f5\b0 \cf3 \cb4 \kerning1\expnd0\expndtw0 \CocoaLigature0 docker build -t coaster-server .\
+
+\f3\b \cf0 \cb1 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \
+
+\f5\b0 \cf3 \cb4 \kerning1\expnd0\expndtw0 \CocoaLigature0 docker build -t coaster-client .\
+
+\f3\b \cf0 \cb1 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f2\b0 \cf0 Functional test images locally.\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f5 \cf3 \cb4 \kerning1\expnd0\expndtw0 \CocoaLigature0 docker run -p 3000:3000 coaster-server\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+\cf3 docker run coaster-client\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f3\b \cf0 \cb1 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \
+2.2 Tagging images and pushing to docker-hub.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f5\b0 \cf3 \cb4 \kerning1\expnd0\expndtw0 \CocoaLigature0 docker tag coaster-server tanermetin/coaster-server:latest\
+docker tag coaster-client tanermetin/coaster-client:latest\
+docker push tanermetin/coaster-server:latest\
+docker push tanermetin/coaster-client:latest
+\f3\b \cf0 \cb1 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \
+2.3 Making necessary configurations in OpenShift
+\f2\b0  (
+\f1 \uc0\u55358 \u56777 
+\f2 )\
+Pushed docker images is pulled by deployment files to create our service. Creating necessary configuration files for server, client, service and route, that helps to create pods, run service and expose public endpoint for us. \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f5 \cf3 \cb4 \kerning1\expnd0\expndtw0 \CocoaLigature0 oc apply -f server/server-deployment.yaml\
+oc apply -f client/client-deployment.yaml\
+oc apply -f server/\
+oc apply -f route.yaml\
+
+\f3\b \cf0 \cb1 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 2.3 Optional (get, destroy)\
+To delete only pods.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f5\b0 \cf3 \cb4 \kerning1\expnd0\expndtw0 \CocoaLigature0 oc delete pods --all\
+oc delete all --all\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f0 \cf2 \cb1 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f3\b \cf0 To get basic backbone knowledge.
+\f0\b0 \cf2 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f5 \cf3 \cb4 \kerning1\expnd0\expndtw0 \CocoaLigature0 oc get pods\
+oc get deployments\
+oc get services\
+oc get routes\
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf2 \cb1 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \
+\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f3\b \cf0 To delete all resources -CAREFUL WITH THIS ONE-.
+\f0\b0 \cf2 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f5 \cf3 \cb4 \kerning1\expnd0\expndtw0 \CocoaLigature0 oc delete all --all\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f0 \cf2 \cb1 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \
+\pard\pardeftab720\partightenfactor0
+\cf2 \
+3. Scaling Deployment 
+\f1 \cf0 \uc0\u9878 \u65039 
+\f0 \cf2 \
+\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f2 \cf0 3.1. Multiple existing ways to scale application. \
+
+\f3\b Option 3.1.1: 
+\f2\b0 Changing 
+\f6\i replica
+\f2\i0  value in deployment files.\
+
+\f3\b Option 3.1.2
+\f2\b0 : Using the scalability options on OpenShift/GKE/AKS. Additionally add
+\f6\i  LB
+\f2\i0 .
+\f3\b \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b0 \cf2 Routes:\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f5 \cf3 \cb4 \kerning1\expnd0\expndtw0 \CocoaLigature0 server-route-stanermetin-dev.apps.sandbox-m2.ll9k.p1.openshiftapps.com\
+
+\f3\b \cf0 \cb1 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 What to expect?\
+\
+\
+Assignment is completed in 4 hours.\
+\
+Taner Metin\
+\pard\pardeftab720\partightenfactor0
+
+\f0\b0 \cf2 \
+\pard\pardeftab720\partightenfactor0
+
+\f2 \cf0 \
+\pard\tx566\pardeftab720\partightenfactor0
+\cf0 \
+\
+\
+}

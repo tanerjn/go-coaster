@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      containers:
+      - name: client
+        image: tanermetin/coaster-client:latest
+        imagePullPolicy: Always
+        env:
+        - name: SERVER_URL
+          value: "http://coaster-server:3000"
+
