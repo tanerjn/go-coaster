@@ -3,12 +3,13 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-# Variables
-DOCKER_USERNAME="tanermetin"  # Replace with your Docker Hub username
-SERVER_IMAGE="coaster-server"
-CLIENT_IMAGE="coaster-client"
-SERVER_TAG="latest"
-CLIENT_TAG="latest"
+# Load .env variables
+if [ -f .env ]; then
+  export $(grep -v '^#' .env | xargs)
+else
+  echo ".env file not found!"
+  exit 1
+fi
 
 # Build Docker images for server and client
 echo "Building Docker images..."
